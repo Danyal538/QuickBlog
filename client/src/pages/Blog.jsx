@@ -6,23 +6,55 @@ import Navbar from '../components/Navbar';
 import moment from 'moment/moment';
 import Footer from '../components/Footer';
 import Loader from '../components/Loader';
+import { useAppContext } from '../Context/AppContext';
+import toast from 'react-hot-toast';
 
 const Blog = () => {
-    const { id } = useParams();
+    const { blogId } = useParams();
     const [data, setData] = useState(null);
     const [comment, setComment] = useState([]);
     const [name, setName] = useState("");
     const [content, setContent] = useState("");
+    const { axios } = useAppContext();
 
     const fetchBlogData = async () => {
-        const data = blog_data.find(item => item._id === id);
-        setData(data);
+        try {
+            console.log("Fetching blog with id:", blogId)
+            const { data } = await axios.get(`/api/blog/${blogId}`);
+            data.success ? setData(data.blog) : toast.error(data.message);
+        } catch (error) {
+            toast.error(error.message);
+        }
     };
     const fetchComments = async () => {
-        setComment(comments_data)
+        try {
+            const { data } = await axios.post('/api/blog/comments', { blogId: blogId });
+            if (data.success) {
+                setComment(data.comments);
+            }
+            else {
+                toast.error(data.message);
+            }
+        } catch (error) {
+            toast.error(error.message);
+        }
     };
     const addComment = async (e) => {
         e.preventDefault();
+        try {
+            const { data } = await axios.post('/api/blog/add-comment', { blog: blogId, name, content });
+            if (data.success) {
+                toast.success(data.message);
+                setName("");
+                setContent("");
+                fetchComments();
+            }
+            else {
+                toast.error(data.message);
+            }
+        } catch (error) {
+            toast.error(error.message);
+        }
     }
 
     useEffect(() => {
@@ -71,9 +103,9 @@ const Blog = () => {
                     <p className='font-semibold mb-4'>Add your comment</p>
                     <form onSubmit={addComment} className='flex flex-col items-start gap-4 max-w-lg'>
 
-                        <input onClick={(e) => setName(e.target.value)} type="text" placeholder='Name' required className='w-full p-2 border border-gray-300 rounded outline-none' />
+                        <input onChange={(e) => setName(e.target.value)} type="text" placeholder='Name' required className='w-full p-2 border border-gray-300 rounded outline-none' />
 
-                        <textarea onClick={(e) => setContent(e.target.value)} className='w-full p-2 border border-gray-300 rounded outline-none h-48' required placeholder='Comment'></textarea>
+                        <textarea onChange={(e) => setContent(e.target.value)} className='w-full p-2 border border-gray-300 rounded outline-none h-48' required placeholder='Comment'></textarea>
 
                         <button type='submit' className='bg-primary text-white rounded p-2 px-8 hover:scale-102 transition-all cursor-pointer'>Submit</button>
                     </form>
@@ -94,4 +126,4 @@ const Blog = () => {
     ) : <Loader />
 }
 
-export default Blog
+export default Blog;

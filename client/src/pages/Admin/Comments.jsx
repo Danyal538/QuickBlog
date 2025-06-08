@@ -1,14 +1,29 @@
 import React, { useEffect, useState } from 'react'
 import { comments_data } from '../../assets/assets';
 import CommentTabelItem from '../../components/Admin/CommentTabelItem';
+import { useAppContext } from '../../Context/AppContext';
+import toast from 'react-hot-toast';
 
 const Comments = () => {
   const [comments, setComments] = useState([]);
   const [filter, setFilter] = useState("Not Approved");
+  const { axios } = useAppContext();
 
   const fetchComments = async () => {
-    setComments(comments_data);
+    try {
+      const { data } = await axios.get('/api/admin/comments');
+      if (data.success && Array.isArray(data.comments)) {
+        setComments(data.comments);
+      } else {
+        setComments([]); // default to empty array on failure
+        toast.error(data.message || "Failed to fetch comments.");
+      }
+    } catch (error) {
+      setComments([]); // prevent undefined state
+      toast.error(error.message || "Network error");
+    }
   };
+
 
   useEffect(() => {
     fetchComments();
@@ -36,12 +51,33 @@ const Comments = () => {
             </tr>
           </thead>
           <tbody>
-            {
+            {/* {
               comments.filter((comment) => {
                 if (filter === "Approved") return comment.isApproved === true;
                 return comment.isApproved === false;
               }).map((comment, index) => <CommentTabelItem index={index + 1} key={comment._id} comment={comment} fetchComments={fetchComments} />)
-            }
+            } */}
+            {Array.isArray(comments) ? (
+              comments
+                .filter((comment) =>
+                  filter === "Approved" ? comment.isApproved : !comment.isApproved
+                )
+                .map((comment, index) => (
+                  <CommentTabelItem
+                    key={comment._id}
+                    index={index + 1}
+                    comment={comment}
+                    fetchComments={fetchComments}
+                  />
+                ))
+            ) : (
+              <tr>
+                <td className="px-6 py-4 text-red-500" colSpan={3}>
+                  Failed to load comments.
+                </td>
+              </tr>
+            )}
+
           </tbody>
         </table>
       </div>
@@ -49,4 +85,4 @@ const Comments = () => {
   )
 }
 
-export default Comments
+export default Comments;

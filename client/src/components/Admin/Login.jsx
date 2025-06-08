@@ -1,12 +1,31 @@
 import React, { useState } from 'react'
+import { useAppContext } from '../../Context/AppContext';
+import toast from 'react-hot-toast';
 
 const Login = () => {
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const { setToken, axios } = useAppContext();
 
-    const handleSubmit = async () => {
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            const { data } = await axios.post("/api/admin/login", { email, password });
+            if (data.success) {
+                setToken(data.token);
+                localStorage.setItem('token', data.token);
+                axios.defaults.headers.common['Authorization'] = data.token;
+            }
+            else {
+                toast.error(data?.message || "Unexpected error occurred in getting token");
+                console.log("Unexpected error occurred in getting token")
 
+            }
+        } catch (error) {
+            toast.error(error?.message || "Unexpected error occurred in logging user in");
+            console.log("Unexpected error occurred in logging user in")
+        }
     };
     return (
         <div className='flex items-center justify-center h-screen'>
