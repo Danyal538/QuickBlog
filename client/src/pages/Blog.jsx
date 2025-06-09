@@ -19,7 +19,6 @@ const Blog = () => {
 
     const fetchBlogData = async () => {
         try {
-            console.log("Fetching blog with id:", blogId)
             const { data } = await axios.get(`/api/blog/${blogId}`);
             data.success ? setData(data.blog) : toast.error(data.message);
         } catch (error) {
